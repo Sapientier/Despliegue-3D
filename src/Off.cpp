@@ -1,16 +1,8 @@
 #include "Off.h"
 
-COff::COff()
-{
-}
-
-COff::~COff()
-{
-}
-
 extern vector<CModel> models; //Todos los modelos iran en este vector
 
-void COff::read_off(string path)
+void read_off(string path)
 {
 	int nVertices, nFaces, nEdges;
 	char line[4096] = ""; //Leo 4096 char en una linea

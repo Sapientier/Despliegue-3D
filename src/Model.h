@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Main.h"
 
 class CModel {
@@ -17,7 +16,7 @@ public:
 	float rotacion[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	double scaleT = 1.00;
 	float mat[4 * 4];
-	float color_a[4] = { 0.5f, 0.0f, 0.0f, 0.0 };
+	float color_a[4] = { 0.3f, 0.3f, 0.3f, 0.0 };
 	float color_d[4] = { 1.0f, 1.0f, 0.0f, 0.0 };
 	float color_e[4] = { 1.0f, 1.0f, 1.0f, 0.0 };
 	style stylo = Triangulos_rellenos;
@@ -28,6 +27,7 @@ public:
 	CModel();
 	~CModel();
 	void initVBO();
+	GLuint installShaders();
 	void sendDataToOpenGL(char *nombre, bool is_obj);
 	void draw(float scaleT, float rotacion[4], float ejeX, float ejeY, float ejeZ);
 };
@@ -42,3 +42,4 @@ struct face {
 	int n_vertex;
 	vector<int> f;
 };
+

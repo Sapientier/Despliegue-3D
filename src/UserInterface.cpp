@@ -20,14 +20,14 @@ CUserInterface * CUserInterface::Instance()
 
 CUserInterface::CUserInterface()
 {
-	mUserInterface = TwNewBar("Model");
+	mUserInterface = TwNewBar("Menu");
 
-	TwDefine("Model refresh = '0.0001f'");
-	TwDefine("Model resizable = false");
-	TwDefine("Model fontresizable = false");
-	TwDefine("Model movable = false");
-	TwDefine("Model position = '20 20'");
-	TwDefine("Model size = '220 320'");
+	TwDefine("Menu refresh = '0.0001f'");
+	TwDefine("Menu resizable = false");
+	TwDefine("Menu fontresizable = false");
+	TwDefine("Menu movable = false");
+	TwDefine("Menu position = '20 20'");
+	TwDefine("Menu size = '220 320'");
 
 	mModelTranslation[0] = 0.0f;
 	mModelTranslation[1] = 0.0f;

@@ -1,15 +1,9 @@
 ﻿#include "Model.h"
-#include "Obj.h"
-#include "Off.h"
+#include "OBJ.h"
+#include "OFF.h"
 
-CModel::CModel()
-{
-}
-
-CModel::~CModel()
-{
-}
-
+extern const char* vertexShaderCode;
+extern const char* fragmentShaderCode;
 extern int selectedModel;
 extern float color_ambiental[4];
 extern float color_difuso[4];
@@ -22,6 +16,7 @@ extern float brillo;
 extern float colorNormals[4];
 extern style currentStyle;
 extern projection currentProjection;
+extern shader currentShader;
 extern bool boolpersa;
 extern float ejeXL;
 extern float ejeYL;
@@ -36,10 +31,16 @@ extern bool zbuffer;
 extern bool bculling;
 extern bool bounding;
 extern bool showNormals;
+
+//Variables para shaders
 extern GLuint program; //Programa de VBO
 extern glm::mat4 project_mat; //Matriz de Proyeccion
 extern glm::mat4 view_mat; //Matriz de View
 extern vector<CModel> models; //Todos los modelos iran en este vector
+
+CModel::CModel() {}
+
+CModel::~CModel() {}
 
 //Para crear la matriz de escalamiento
 glm::mat4 scale_en_matriz(float scale_tx) {
@@ -107,10 +108,77 @@ void CModel::initVBO() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+//Compilacion, linkeamiento e instalacion de shaders
+GLuint CModel::installShaders() {
+	GLuint programID;
+	GLuint vertexID = glCreateShader(GL_VERTEX_SHADER);
+	GLuint fragmentID = glCreateShader(GL_FRAGMENT_SHADER);
+
+	const char * adapter[1];
+	adapter[0] = vertexShaderCode;
+	glShaderSource(vertexID, 1, adapter, 0);
+	adapter[0] = fragmentShaderCode;
+	glShaderSource(fragmentID, 1, adapter, 0);
+
+	glCompileShader(fragmentID);
+	glCompileShader(vertexID);
+
+	GLint vStatus;
+	GLint fStatus;
+	glGetShaderiv(vertexID, GL_COMPILE_STATUS, &vStatus);
+	glGetShaderiv(fragmentID, GL_COMPILE_STATUS, &fStatus);
+	printf("Status del vertex: %d\n", vStatus);
+	printf("Status del fragment: %d\n", fStatus);
+
+	GLsizei vInfoLen;
+	GLsizei fInfoLen;
+	glGetShaderiv(vertexID, GL_INFO_LOG_LENGTH, &vInfoLen);
+	glGetShaderiv(fragmentID, GL_INFO_LOG_LENGTH, &fInfoLen);
+	char *vInfoLog = (char*)malloc(vInfoLen);
+	char *fInfoLog = (char*)malloc(fInfoLen);
+	glGetShaderInfoLog(vertexID, vInfoLen, &vInfoLen, vInfoLog);
+	glGetShaderInfoLog(fragmentID, fInfoLen, &fInfoLen, fInfoLog);
+	printf("Compilar vertex shader: %s\n", vInfoLog);
+	printf("Compilar fragment shader: %s\n", fInfoLog);
+
+	if (vStatus == GL_FALSE) {
+		printf("Error de compilacion en el vertex shader!\n");
+	}
+	if (fStatus == GL_FALSE) {
+		printf("Error de compilacion en el fragment shader!\n");
+	}
+	printf("Compilacion exitosa\n");
+
+	programID = glCreateProgram();
+	glAttachShader(programID, vertexID);
+	glAttachShader(programID, fragmentID);
+
+	glLinkProgram(programID);
+
+	printf("Enlace de programa hecho\n");
+	GLint linked;
+	glGetProgramiv(programID, GL_LINK_STATUS, &linked);
+	GLsizei infoLen;
+	char infoLog[100];
+	glGetProgramInfoLog(programID, 100, &infoLen, infoLog);
+	printf("Enlace de programa:%s\n", infoLog);
+	if (linked == GL_TRUE)
+	{
+		printf("Enlazado de shaders exitoso\n\n");
+		return programID;
+	}
+	else
+	{
+		printf("Enlazado de shaders fallido\n\n");
+		return 0;
+	}
+}
+
 //Crea el programa y llama a los read
 void CModel::sendDataToOpenGL(char *nombre, bool is_obj) {
-	/*if (is_obj) read_obj(nombre);
-	else read_off(nombre);*/
+	program = installShaders();
+	if (is_obj) read_obj(nombre);
+	else read_off(nombre);
 }
 
 //Funcion que dibuja el modelo VBO, BB y normales
@@ -141,6 +209,7 @@ void CModel::draw(float scaleT, float rotacion[4], float ejeX, float ejeY, float
 		GLuint tipo = glGetUniformLocation(program, "tipo_de_shader");
 
 		glUniform1i(bool_loc, 0);
+		glUniform1i(tipo, currentShader);
 		glUniform3f(view_loc, 0.0, 0.0, 3.0);
 		glUniform3f(light_colora_loc, color_luz_ambiental[0], color_luz_ambiental[1], color_luz_ambiental[2]);
 		glUniform3f(light_colord_loc, color_luz_difuso[0], color_luz_difuso[1], color_luz_difuso[2]);

@@ -1,17 +1,9 @@
 #include "Obj.h"
 
-CObj::CObj()
-{
-}
-
-CObj::~CObj()
-{
-}
-
 extern vector<CModel> models; //Todos los modelos iran en este vector
 
 //Para separar un string
-vector<string> CObj::split(const string &s, char delim) {
+vector<string> split(const string &s, char delim) {
 	stringstream ss(s);
 	string item;
 	vector<string> tokens;
@@ -19,16 +11,17 @@ vector<string> CObj::split(const string &s, char delim) {
 		tokens.push_back(item);
 	}
 	return tokens;
+
 }
 
 //Lector de OBJ
-void CObj::read_obj(string path) {
+void read_obj(char *filename) {
 	int nFigures, nVertices = 0; int nFaces = 0; int nEdges = 0;
 	vector<vertice> auxVertices_1, auxVertices_2;
 	char line[4096] = ""; //Leo 4096 char en una linea
 	ifstream file;
 	bool centrado = true;
-	file.open(path);
+	file.open(filename);
 	string comprobacion;
 	map<vertice, vertice> normal_vertice_real;
 	map<vertice, int> normal_vertice_total;

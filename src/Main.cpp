@@ -1,18 +1,14 @@
 ﻿#include "Main.h"
 #include "Model.h"
-#include "Off.h"
-#include "UserInterface.h"
 
 using std::vector;
 
-GLFWwindow *gWindow;
-int gWidth, gHeight;
-CUserInterface * userInterface;
-vector <CModel> models;
-int picked;
 //<-----------------VARIABLES Y ESTRUCTURAS--------------------->
+int gWidth, gHeight;
+vector <CModel> models;
+
 //Variables globales a usar en AntTweakBar
-float color_ambiental[] = { 0.5f, 0.0f, 0.0f, 0.0 };
+float color_ambiental[] = { 0.3f, 0.3f, 0.3f, 0.0 };
 float color_difuso[] = { 1.0f, 1.0f, 0.0f, 0.0 };
 float color_especular[] = { 1.0f, 1.0f, 1.0f, 0.0 };
 float color_luz_ambiental[] = { 1.0f, 1.0f, 1.0f, 0.0 };
@@ -23,7 +19,8 @@ float colorNormals[] = { 1,1,1,0 };
 float rotacion[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 style currentStyle = Triangulos_rellenos;
 projection currentProjection = Perspectiva;
-int autoRotar = 0, tiempoRotacion = 0, selectedModel = 0, width = 512, height = 512;
+shader currentShader = Gouraud;
+int autoRotar = 0, tiempoRotacion = 0, selectedModel = 0, width = 1200, height = 680;
 float rotacionInicial[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 float scaleT = 1.00, ejeX = 0.0, ejeY = 0.0, ejeZ = 0.0, ejeXL = 1.0, ejeYL = 0.75, ejeZL = 0.0, brillo = 32;
 bool selecting = false, zbuffer = true, bculling = true, bounding = true, showNormals = false, boolpersa = true;
@@ -74,35 +71,36 @@ void multiplicarQuat(const float *q1, const float *q2, float *qout) {
 	qout[0] = qr[0]; qout[1] = qr[1]; qout[2] = qr[2]; qout[3] = qr[3];
 }
 
-void updateUserInterface()
-{
-	if (picked > -1) {
-		/*models[picked]->setTranslation(userInterface->getModelTranslation());*/
-	}		
-}
-
 void display()
 {
+	glLoadIdentity();
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	TwDraw();
 
+	float mat[4 * 4];
+	float v[4];
+	float g_LightMultiplier = 1.0f;
+	CModel mod;
 
-	for (unsigned int i = 0; i < models.size(); i++)
-	{
-		/*glm::vec3 translation = models[i]->getTranslation();*/
+	mod.draw(scaleT, rotacion, ejeX, ejeY, ejeZ);
 
-		glPushMatrix();
-		/*glTranslatef(translation.x, translation.y, translation.z);
-		models[i]->display();*/
-		glPopMatrix();
-	}
+	glColor3f(color_luz_ambiental[0] * color_luz_especular[0] * color_luz_difuso[0],
+		color_luz_ambiental[1] * color_luz_especular[1] * color_luz_difuso[1],
+		color_luz_ambiental[2] * color_luz_especular[2] * color_luz_difuso[2]
+	);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glTranslatef(ejeXL, ejeYL, ejeZL);
+	glutWireSphere(0.25, 50, 50);
 
+	glutPostRedisplay();
+	glutSwapBuffers();
 }
 
-void reshape(GLFWwindow *window, int width, int height)
+void reshape(int w, int h)
 {
-	gWidth = width;
-	gHeight = height;
+	gWidth = w;
+	gHeight = h;
 
 	glViewport(0, 0, gWidth, gHeight);
 	glEnable(GL_DEPTH_TEST);
@@ -129,84 +127,28 @@ void reshape(GLFWwindow *window, int width, int height)
 	TwWindowSize(gWidth, gHeight);
 }
 
-void keyInput(GLFWwindow *window, int key, int scancode, int action, int mods)
-{
-	if (TwEventKeyGLFW(key, action))
-		return;
 
-	if (action == GLFW_PRESS)
-	{
-		switch (key)
-		{
-		case GLFW_KEY_ESCAPE:
-			glfwSetWindowShouldClose(window, GL_TRUE);
-			break;
-		}
+//Funcion de mouseFunc
+void mouseFunc(int button, int state, int x, int y) {
+	if (!TwEventMouseButtonGLUT(button, state, x, y)) {
+		if (button == 3) scaleT += 0.01;
+		if (button == 4 && scaleT > 0.02) scaleT -= 0.01;
 	}
 }
 
-void mouseButton(GLFWwindow* window, int button, int action, int mods)
-{
-	if (TwEventMouseButtonGLFW(button, action))
-		return;
-}
-
-void cursorPos(GLFWwindow* window, double x, double y)
-{
-	if (TwEventMousePosGLFW(int(x), int(y)))
-		return;
-}
-
-void charInput(GLFWwindow* window, unsigned int scanChar)
-{
-	if (TwEventCharGLFW(scanChar, GLFW_PRESS))
-		return;
-}
-
-void destroy()
-{
-	delete userInterface;
-
-	TwTerminate();
-	glfwDestroyWindow(gWindow);
-	glfwTerminate();
-}
-
-bool initGlfw()
-{
-	if (!glfwInit())
-		return false;
-
-	gWindow = glfwCreateWindow(gWidth, gHeight, "Despliegue 3D", NULL, NULL);
-
-	if (!gWindow)
-	{
-		glfwTerminate();
-		return false;
+//Funcion de motionfunc
+void motionFunc(int x, int y) {
+	if (!TwEventMouseMotionGLUT(x, y)) {
+		glutPostRedisplay();
 	}
-
-	glfwMakeContextCurrent(gWindow);
-
-	const GLFWvidmode * vidMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-	glfwSetWindowPos(gWindow, (vidMode->width - gWidth) >> 1, (vidMode->height - gHeight) >> 1);
-
-	glfwSetWindowSizeCallback(gWindow, reshape);
-	glfwSetKeyCallback(gWindow, keyInput);
-	glfwSetMouseButtonCallback(gWindow, mouseButton);
-	glfwSetCursorPosCallback(gWindow, cursorPos);
-	glfwSetCharCallback(gWindow, charInput);
-
-	return true;
 }
 
-bool initUserInterface()
-{
-	if (!TwInit(TW_OPENGL, NULL))
-		return false;
-
-	userInterface = CUserInterface::Instance();
-
-	return true;
+//Funcion de MotionPassive
+void passiveMotionFunc(int x, int y) {
+	if (!TwEventMouseMotionGLUT(x, y)) {
+		glutPostRedisplay();
+	}
+	glutPostRedisplay();
 }
 
 //<-----------------FUNCIONES DE ANTTWEAKBAR--------------------->
@@ -220,7 +162,7 @@ void TW_CALL exit(void *clientData) {
 void TW_CALL cambiar_proyeccion(void *clientData) {
 	if (currentProjection == 1) boolpersa = true;
 	else boolpersa = false;
-	reshape(gWindow, gWidth, gHeight);
+	reshape(gWidth, gHeight);
 }
 
 //Funcion de activar Z buffer
@@ -337,37 +279,127 @@ void TW_CALL loadModel(void *clientData) {
 
 }
 
-int main(void)
+int main(int argc, char* argv[])
 {
 	gWidth = 1200;
 	gHeight = 680;
-	picked = 0;
 
-	if (!initGlfw() || !initUserInterface())
+	float eje[] = { 0.0f, 0.0f, 0.0f };
+	float angulo = 0.0f;
+	TwBar *menuTW;
+	TwBar *modelTW;
+
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH);
+	glutInitWindowSize(gWidth, gHeight);
+	glutInitWindowPosition(50, 50);
+	glutCreateWindow("Proyecto 2 - Despliegue 3D");
+
+	glutMouseFunc((mouseFunc));
+	glutDisplayFunc(display);
+	glutPassiveMotionFunc(passiveMotionFunc);
+	glutMotionFunc(motionFunc);
+
+	glutKeyboardFunc((GLUTkeyboardfun)TwEventKeyboardGLUT);
+	TwGLUTModifiersFunc(glutGetModifiers);
+	glutReshapeFunc(reshape);
+	TwGLUTModifiersFunc(glutGetModifiers);
+
+	if (!TwInit(TW_OPENGL, NULL))
 		return EXIT_FAILURE;
 
-	glEnable(GL_DEPTH_TEST);
+	initGlew();
 
-	reshape(gWindow, gWidth, gHeight);
+	menuTW = TwNewBar("Menu");
+	TwWindowSize(gWidth, gHeight);
 
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(3.0f, 3.0f, 10.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+	//Botones del menu inicial en AntTweakBar
+	TwDefine("Menu refresh = '0.0001f'");
+	TwDefine("Menu resizable = false");
+	TwDefine("Menu fontresizable = false");
+	TwDefine("Menu movable = false");
+	TwDefine("Menu position = '20 20'");
+	TwDefine("Menu size = '220 320'");
 
-	while (!glfwWindowShouldClose(gWindow))
-	{
-		display();
+	TwAddButton(menuTW, "load", loadModel, NULL, " label='Abrir modelo' key=CTRL+o");
+	TwAddVarRW(menuTW, "model", TW_TYPE_INT32, &selectedModel, "min=0 step=1 label='Modelo' group='Seleccionar modelo'");
+	TwAddButton(menuTW, "select", selectModel, NULL, " label='Seleccionar' key=s group='Seleccionar modelo'");
+	TwAddButton(menuTW, "exit", exit, NULL, " label='Salir' key=Esc");
 
-		TwDraw();
+	modelTW = TwNewBar("Figura");
+	//Botones de menu Figura
+	TwWindowSize(gWidth, gHeight);
+	TwDefine("Figura visible=false size='270 680' position='20 20' color='128 0 0' label='Modelos'");
 
-		updateUserInterface();
+	//Grupo de proyeccion
+	TwAddButton(modelTW, "select", selectModel, NULL, " label='Volver al Menu' key=m");
+	TwEnumVal projEN[2] = { { Perspectiva, "Perspectiva" },{ Ortogonal, "Ortogonal" } };
+	TwType projType = TwDefineEnum("ProjType", projEN, 2);
+	TwAddVarRW(modelTW, "Proyeccion", projType, &currentProjection, "group='Proyeccion2'");
+	TwAddButton(modelTW, "Activate_P", cambiar_proyeccion, NULL, " label='Activar' group='Proyeccion2'");
 
-		glfwSwapBuffers(gWindow);
+	//Activar Z Buffer
+	TwAddButton(modelTW, "activateZ", activateZ, NULL, " label='Activar' group='Z-Buffer'");
+	TwAddVarRW(modelTW, "zBuffer", TW_TYPE_BOOL8, &zbuffer, "label='Z-Buffer' readonly=true group='Z-Buffer'");
 
-		glfwPollEvents();
-	}
+	//Activar BackFace Culling
+	TwAddButton(modelTW, "activateBF", activateBF, NULL, " label='Activar' group='Back-Face Culling'");
 
-	destroy();
+	//Tipo de despliegue (mallado, triangulos, puntos)
+	TwAddVarRW(modelTW, "bCulling", TW_TYPE_BOOL8, &bculling, "label='Back-Face Culling' readonly=true group='Back-Face Culling'");
+	TwEnumVal styleEN[3] = { { Puntos, "Puntos" },{ Mallado, "Mallado" },{ Triangulos_rellenos, "Triangulos rellenos" } };
+	TwType stylo = TwDefineEnum("ShapeType", styleEN, 3);
+	TwAddVarRW(modelTW, "Estilo", stylo, &currentStyle, "");
 
+	//Tipo de shader (Gouraud, Flat, Phong)
+	TwEnumVal styleShader[2] = { { Gouraud, "Gouraud" },{ Flat, "Flat" } };
+	TwType shader = TwDefineEnum("ShaderType", styleShader, 2);
+	TwAddVarRW(modelTW, "Shader", shader, &currentShader, "");
+
+	//Botones Bounding Box
+	TwAddVarRW(modelTW, "Color BB", TW_TYPE_COLOR3F, &colorbb, "label='Color' group='BoundingBox'");
+	TwAddButton(modelTW, "activateBB", activateBB, NULL, " label='Activar' group='BoundingBox'");
+	TwAddVarRW(modelTW, "bounding", TW_TYPE_BOOL8, &bounding, "label='Bounding Box' readonly=true group='BoundingBox'");
+
+	//Botones Normales
+	TwAddVarRW(modelTW, "colorNormals", TW_TYPE_COLOR3F, &colorNormals, "label='Color' group='Normales'");
+	TwAddVarRW(modelTW, "normals", TW_TYPE_BOOL8, &showNormals, "label='Normales' readonly=true group='Normales'");
+	TwAddButton(modelTW, "activateNormals", activateNormals, NULL, " label='Activar' group='Normales'");
+
+	//Botones rotacion, traslacion y escalamiento
+	TwAddVarRW(modelTW, "scale", TW_TYPE_FLOAT, &scaleT, "min=0.01 step=0.01 label='Escalar'");
+	TwAddVarRW(modelTW, "ejeX", TW_TYPE_FLOAT, &ejeX, "step=0.01 label='x' group='Trasladar'");
+	TwAddVarRW(modelTW, "ejeY", TW_TYPE_FLOAT, &ejeY, "step=0.01 label='y' group='Trasladar'");
+	TwAddVarRW(modelTW, "ejeZ", TW_TYPE_FLOAT, &ejeZ, "step=0.01 label='z' group='Trasladar'");
+	TwAddVarCB(modelTW, "autoRotate", TW_TYPE_BOOL32, SetAutoRotateCB, GetAutoRotateCB, NULL, " label='Auto-rotacion' group='Rotar'");
+	TwAddVarRW(modelTW, "rotation", TW_TYPE_QUAT4F, &rotacion, " label='Rotacion' opened=true group='Rotar'");
+
+	//Color del material, ambiental, difuso y especular
+	TwAddVarRW(modelTW, "Color Ambiental", TW_TYPE_COLOR3F, &color_ambiental, "label='Ambiental' group='Material'");
+	TwAddVarRW(modelTW, "Color Difuso", TW_TYPE_COLOR3F, &color_difuso, "label='Difuso' group='Material'");
+	TwAddVarRW(modelTW, "Color Especular", TW_TYPE_COLOR3F, &color_especular, "label='Especular' group='Material'");
+
+	//Botones de Luz. Brillo. Color de Luz, Posicion de Luz.
+	TwAddVarRW(modelTW, "Brillo", TW_TYPE_FLOAT, &brillo, "min=1.0 max=400.0 step=1.0 label='Brillo' group='Luz'");
+	TwAddVarRW(modelTW, "ejeXL", TW_TYPE_FLOAT, &ejeXL, "step=0.01 label='x' group='Trasladar luz' group='Luz'");
+	TwAddVarRW(modelTW, "ejeYL", TW_TYPE_FLOAT, &ejeYL, "step=0.01 label='y' group='Trasladar luz' group='Luz'");
+	TwAddVarRW(modelTW, "ejeZL", TW_TYPE_FLOAT, &ejeZL, "step=0.01 label='z' group='Trasladar luz' group='Luz'");
+	TwAddVarRW(modelTW, "Color AmbientalL", TW_TYPE_COLOR3F, &color_luz_ambiental, "label='Color Ambiental' group='Luz'");
+	TwAddVarRW(modelTW, "Color DifusoL", TW_TYPE_COLOR3F, &color_luz_difuso, "label='Color Difuso' group='Luz'");
+	TwAddVarRW(modelTW, "Color EspecularL", TW_TYPE_COLOR3F, &color_luz_especular, "label='Color Especular' group='Luz'");
+
+	//Boton de salir
+	TwAddButton(modelTW, "exitF", exit, NULL, " label='Salir' key=Esc");
+
+	//Para que sirva VBO
+	glewExperimental = GL_TRUE;
+	glewInit();
+
+	//Auto-rotacion
+	tiempoRotacion = getTimeMs();
+	setQuat(eje, angulo, rotacion);
+	setQuat(eje, angulo, rotacionInicial);
+
+	glutMainLoop();
 	return EXIT_SUCCESS;
 }
