@@ -1,3 +1,4 @@
+// Brian Torres
 #include "Off.h"
 
 extern vector<CModel> models; //Todos los modelos iran en este vector

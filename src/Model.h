@@ -1,3 +1,4 @@
+// Brian Torres
 #pragma once
 #include "Main.h"
 
@@ -16,8 +17,8 @@ public:
 	float rotacion[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	double scaleT = 1.00;
 	float mat[4 * 4];
-	float color_a[4] = { 0.3f, 0.3f, 0.3f, 0.0 };
-	float color_d[4] = { 1.0f, 1.0f, 0.0f, 0.0 };
+	float color_a[4] = { 0.5f, 0.4f, 0.4f, 0.0 };
+	float color_d[4] = { 1.0f, 0.5f, 0.0f, 0.0 };
 	float color_e[4] = { 1.0f, 1.0f, 1.0f, 0.0 };
 	style stylo = Triangulos_rellenos;
 	float ejeX = 0.0;

@@ -1,3 +1,4 @@
+// Brian Torres
 #pragma once
 
 #include "../headers/GL/glew.h"
@@ -53,6 +54,8 @@ void TW_CALL activateBB(void *clientData);
 void TW_CALL activateBF(void *clientData);
 
 void TW_CALL activateNormals(void *clientData);
+
+void TW_CALL activarLuces1(void *clientData);
 
 void TW_CALL SetAutoRotateCB(const void *value, void *clientData);
 

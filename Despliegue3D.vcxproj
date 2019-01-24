@@ -130,7 +130,6 @@
     <ClCompile Include="src\Model.cpp" />
     <ClCompile Include="src\Obj.cpp" />
     <ClCompile Include="src\Off.cpp" />
-    <ClCompile Include="src\UserInterface.cpp" />
     <ClCompile Include="src\vertex_shader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -138,7 +137,6 @@
     <ClInclude Include="src\Model.h" />
     <ClInclude Include="src\Obj.h" />
     <ClInclude Include="src\Off.h" />
-    <ClInclude Include="src\UserInterface.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

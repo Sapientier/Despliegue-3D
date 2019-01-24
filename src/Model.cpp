@@ -1,4 +1,5 @@
-﻿#include "Model.h"
+﻿// Brian Torres
+#include "Model.h"
 #include "OBJ.h"
 #include "OFF.h"
 
@@ -11,16 +12,21 @@ extern float color_especular[4];
 extern float color_luz_ambiental[4];
 extern float color_luz_difuso[4];
 extern float color_luz_especular[4];
+extern float color_luz_ambiental2[4];
+extern float color_luz_difuso2[4];
+extern float color_luz_especular2[4];
 extern float colorbb[4];
-extern float brillo;
 extern float colorNormals[4];
 extern style currentStyle;
 extern projection currentProjection;
 extern shader currentShader;
 extern bool boolpersa;
-extern float ejeXL;
-extern float ejeYL;
-extern float ejeZL;
+extern float ejeXL1;
+extern float ejeYL1;
+extern float ejeZL1;
+extern float ejeXL2;
+extern float ejeYL2;
+extern float ejeZL2;
 extern float tipo_shader;
 extern int autoRotar;
 extern int tiempoRotacion;
@@ -31,6 +37,8 @@ extern bool zbuffer;
 extern bool bculling;
 extern bool bounding;
 extern bool showNormals;
+extern bool showLigth1;
+extern bool showLigth2;
 
 //Variables para shaders
 extern GLuint program; //Programa de VBO
@@ -211,15 +219,32 @@ void CModel::draw(float scaleT, float rotacion[4], float ejeX, float ejeY, float
 		glUniform1i(bool_loc, 0);
 		glUniform1i(tipo, currentShader);
 		glUniform3f(view_loc, 0.0, 0.0, 3.0);
-		glUniform3f(light_colora_loc, color_luz_ambiental[0], color_luz_ambiental[1], color_luz_ambiental[2]);
-		glUniform3f(light_colord_loc, color_luz_difuso[0], color_luz_difuso[1], color_luz_difuso[2]);
-		glUniform3f(light_colore_loc, color_luz_especular[0], color_luz_especular[1], color_luz_especular[2]);
-		glUniform3f(light_loc, ejeXL, ejeYL, ejeZL);
+
+		if (!showLigth1) {
+			glUniform3f(light_colora_loc, color_luz_ambiental[0], color_luz_ambiental[1], color_luz_ambiental[2]);
+			glUniform3f(light_colord_loc, color_luz_difuso[0], color_luz_difuso[1], color_luz_difuso[2]);
+			glUniform3f(light_colore_loc, color_luz_especular[0], color_luz_especular[1], color_luz_especular[2]);
+			glUniform3f(light_loc, ejeXL1, ejeYL1, ejeZL1);
+		}
+
+		if (!showLigth2) {
+			glUniform3f(light_colora_loc, color_luz_ambiental2[0], color_luz_ambiental2[1], color_luz_ambiental2[2]);
+			glUniform3f(light_colord_loc, color_luz_difuso2[0], color_luz_difuso2[1], color_luz_difuso2[2]);
+			glUniform3f(light_colore_loc, color_luz_especular2[0], color_luz_especular2[1], color_luz_especular2[2]);
+			glUniform3f(light_loc, ejeXL2, ejeYL2, ejeZL2);
+		}
 		//Color de los materiales
 		glUniform3f(color_am, models[i].color_a[0], models[i].color_a[1], models[i].color_a[2]);
 		glUniform3f(color_di, models[i].color_d[0], models[i].color_d[1], models[i].color_d[2]);
 		glUniform3f(color_es, models[i].color_e[0], models[i].color_e[1], models[i].color_e[2]);
-		glUniform1f(shiny, brillo);
+		if (!showLigth1 || !showLigth2) {
+			glUniform1f(shiny, 32);
+		}
+		else {
+			glUniform1f(shiny, 400);
+		}
+		
+
 		//Matrices de view y proyeccion
 		glm::mat4 model_mat = translate_en_matriz(models[i].ejeX, models[i].ejeY, models[i].ejeZ);
 

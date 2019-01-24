@@ -1,4 +1,6 @@
-﻿#include "Main.h"
+﻿// Brian Torres
+
+#include "Main.h"
 #include "Model.h"
 
 using std::vector;
@@ -8,36 +10,31 @@ int gWidth, gHeight;
 vector <CModel> models;
 
 //Variables globales a usar en AntTweakBar
-float color_ambiental[] = { 0.3f, 0.3f, 0.3f, 0.0 };
-float color_difuso[] = { 1.0f, 1.0f, 0.0f, 0.0 };
+float color_ambiental[] = { 0.5f, 0.4f, 0.4f, 0.0 };
+float color_difuso[] = { 1.0f, 0.5f, 0.0f, 0.0 };
 float color_especular[] = { 1.0f, 1.0f, 1.0f, 0.0 };
 float color_luz_ambiental[] = { 1.0f, 1.0f, 1.0f, 0.0 };
 float color_luz_difuso[] = { 1.0f, 1.0f, 1.0f, 0.0 };
 float color_luz_especular[] = { 1.0f, 1.0f, 1.0f, 0.0 };
+float color_luz_ambiental2[] = { 1.0f, 1.0f, 1.0f, 0.0 };
+float color_luz_difuso2[] = { 1.0f, 1.0f, 1.0f, 0.0 };
+float color_luz_especular2[] = { 1.0f, 1.0f, 1.0f, 0.0 };
 float colorbb[] = { 1,1,1,0 };
 float colorNormals[] = { 1,1,1,0 };
 float rotacion[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+int autoRotar = 0, tiempoRotacion = 0, selectedModel = 0, width = 1200, height = 680;
+float rotacionInicial[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+float scaleT = 1.00, ejeX = 0.0, ejeY = 0.0, ejeZ = 0.0, ejeXL1 = 1.0, ejeYL1 = 0.5, ejeZL1 = 0.0, ejeXL2 = -1.5, ejeYL2 = 0.1, ejeZL2 = 0.0;
+bool selecting = false, zbuffer = true, bculling = true, bounding = true, showNormals = false, showLigth1 = false, showLigth2 = false, boolpersa = true;
 style currentStyle = Triangulos_rellenos;
 projection currentProjection = Perspectiva;
 shader currentShader = Gouraud;
-int autoRotar = 0, tiempoRotacion = 0, selectedModel = 0, width = 1200, height = 680;
-float rotacionInicial[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-float scaleT = 1.00, ejeX = 0.0, ejeY = 0.0, ejeZ = 0.0, ejeXL = 1.0, ejeYL = 0.75, ejeZL = 0.0, brillo = 32;
-bool selecting = false, zbuffer = true, bculling = true, bounding = true, showNormals = false, boolpersa = true;
 
 GLuint program; //Programa de VBO
 glm::mat4 project_mat; //Matriz de Proyeccion
 glm::mat4 view_mat; //Matriz de View
 
 //<-----------------FUNCIONES GENERALES--------------------->
-
-//Impresion de pantalla
-void initGlew() {
-	printf("OpenGL Version: %s \n", glGetString(GL_VERSION));
-	printf("Vendor: %s \n", glGetString(GL_VENDOR));
-	printf("Renderer: %s \n", glGetString(GL_RENDERER));
-	printf("GLSL Version: %s \n", glGetString(GL_SHADING_LANGUAGE_VERSION));
-}
 
 //Para la autorotacion
 int getTimeMs() {
@@ -47,7 +44,6 @@ int getTimeMs() {
 #else
 	return (int)GetTickCount();
 #endif
-
 }
 
 //Para la rotacion (autorotacion)
@@ -71,6 +67,15 @@ void multiplicarQuat(const float *q1, const float *q2, float *qout) {
 	qout[0] = qr[0]; qout[1] = qr[1]; qout[2] = qr[2]; qout[3] = qr[3];
 }
 
+//Impresion de pantalla
+void initGlew() {
+	printf("OpenGL Version: %s \n", glGetString(GL_VERSION));
+	printf("Vendor: %s \n", glGetString(GL_VENDOR));
+	printf("Renderer: %s \n", glGetString(GL_RENDERER));
+	printf("GLSL Version: %s \n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+}
+
+//Muestra toda la escena 3D
 void display()
 {
 	glLoadIdentity();
@@ -78,25 +83,33 @@ void display()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	TwDraw();
 
-	float mat[4 * 4];
-	float v[4];
-	float g_LightMultiplier = 1.0f;
 	CModel mod;
 
 	mod.draw(scaleT, rotacion, ejeX, ejeY, ejeZ);
 
-	glColor3f(color_luz_ambiental[0] * color_luz_especular[0] * color_luz_difuso[0],
-		color_luz_ambiental[1] * color_luz_especular[1] * color_luz_difuso[1],
-		color_luz_ambiental[2] * color_luz_especular[2] * color_luz_difuso[2]
-	);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glTranslatef(ejeXL, ejeYL, ejeZL);
-	glutWireSphere(0.25, 50, 50);
+	if (!showLigth1) {
+		glColor3f(color_luz_ambiental[0] * color_luz_especular[0] * color_luz_difuso[0],
+			color_luz_ambiental[1] * color_luz_especular[1] * color_luz_difuso[1],
+			color_luz_ambiental[2] * color_luz_especular[2] * color_luz_difuso[2]
+		);
+		glTranslatef(ejeXL1, ejeYL1, ejeZL1);
+		glutWireSphere(0.25, 50, 50);
+	}
+	
+	if (!showLigth2) {
+		glColor3f(color_luz_ambiental2[0] * color_luz_especular2[0] * color_luz_difuso2[0],
+			color_luz_ambiental2[1] * color_luz_especular2[1] * color_luz_difuso2[1],
+			color_luz_ambiental2[2] * color_luz_especular2[2] * color_luz_difuso2[2]
+		);
+		glTranslatef(ejeXL2, ejeYL2, ejeZL2);
+		glutWireSphere(0.2, 20, 20);
+	}
 
 	glutPostRedisplay();
 	glutSwapBuffers();
 }
 
+//Ajusta la ventana para toda la escena 3D
 void reshape(int w, int h)
 {
 	gWidth = w;
@@ -183,6 +196,14 @@ void TW_CALL activateBF(void *clientData) {
 //Funcion de activar Normales
 void TW_CALL activateNormals(void *clientData) {
 	showNormals = !showNormals;
+}
+
+void TW_CALL activarLuces1(void *clientData) {
+	showLigth1 = !showLigth1;
+}
+
+void TW_CALL activarLuces2(void *clientData) {
+	showLigth2 = !showLigth2;
 }
 
 //Funcion de activar el AutoRotate
@@ -321,7 +342,7 @@ int main(int argc, char* argv[])
 	TwDefine("Menu position = '20 20'");
 	TwDefine("Menu size = '220 320'");
 
-	TwAddButton(menuTW, "load", loadModel, NULL, " label='Abrir modelo' key=CTRL+o");
+	TwAddButton(menuTW, "load", loadModel, NULL, " label='Abrir modelo' key=l");
 	TwAddVarRW(menuTW, "model", TW_TYPE_INT32, &selectedModel, "min=0 step=1 label='Modelo' group='Seleccionar modelo'");
 	TwAddButton(menuTW, "select", selectModel, NULL, " label='Seleccionar' key=s group='Seleccionar modelo'");
 	TwAddButton(menuTW, "exit", exit, NULL, " label='Salir' key=Esc");
@@ -335,8 +356,8 @@ int main(int argc, char* argv[])
 	TwAddButton(modelTW, "select", selectModel, NULL, " label='Volver al Menu' key=m");
 	TwEnumVal projEN[2] = { { Perspectiva, "Perspectiva" },{ Ortogonal, "Ortogonal" } };
 	TwType projType = TwDefineEnum("ProjType", projEN, 2);
-	TwAddVarRW(modelTW, "Proyeccion", projType, &currentProjection, "group='Proyeccion2'");
-	TwAddButton(modelTW, "Activate_P", cambiar_proyeccion, NULL, " label='Activar' group='Proyeccion2'");
+	TwAddVarRW(modelTW, "Tipo de Proyeccion", projType, &currentProjection, "group='Proyeccion'");
+	TwAddButton(modelTW, "Activate_P", cambiar_proyeccion, NULL, " label='Activar' group='Proyeccion'");
 
 	//Activar Z Buffer
 	TwAddButton(modelTW, "activateZ", activateZ, NULL, " label='Activar' group='Z-Buffer'");
@@ -379,14 +400,22 @@ int main(int argc, char* argv[])
 	TwAddVarRW(modelTW, "Color Difuso", TW_TYPE_COLOR3F, &color_difuso, "label='Difuso' group='Material'");
 	TwAddVarRW(modelTW, "Color Especular", TW_TYPE_COLOR3F, &color_especular, "label='Especular' group='Material'");
 
-	//Botones de Luz. Brillo. Color de Luz, Posicion de Luz.
-	TwAddVarRW(modelTW, "Brillo", TW_TYPE_FLOAT, &brillo, "min=1.0 max=400.0 step=1.0 label='Brillo' group='Luz'");
-	TwAddVarRW(modelTW, "ejeXL", TW_TYPE_FLOAT, &ejeXL, "step=0.01 label='x' group='Trasladar luz' group='Luz'");
-	TwAddVarRW(modelTW, "ejeYL", TW_TYPE_FLOAT, &ejeYL, "step=0.01 label='y' group='Trasladar luz' group='Luz'");
-	TwAddVarRW(modelTW, "ejeZL", TW_TYPE_FLOAT, &ejeZL, "step=0.01 label='z' group='Trasladar luz' group='Luz'");
-	TwAddVarRW(modelTW, "Color AmbientalL", TW_TYPE_COLOR3F, &color_luz_ambiental, "label='Color Ambiental' group='Luz'");
-	TwAddVarRW(modelTW, "Color DifusoL", TW_TYPE_COLOR3F, &color_luz_difuso, "label='Color Difuso' group='Luz'");
-	TwAddVarRW(modelTW, "Color EspecularL", TW_TYPE_COLOR3F, &color_luz_especular, "label='Color Especular' group='Luz'");
+	//Botones de Luz. Color de Luz, Posicion de Luz.
+	TwAddButton(modelTW, "apagar1", activarLuces1, NULL, "label='Activar' group='Luz 1'");
+	TwAddVarRW(modelTW, "ejeXL1", TW_TYPE_FLOAT, &ejeXL1, "step=0.01 label='x' group='Trasladar luz 1' group='Luz 1'");
+	TwAddVarRW(modelTW, "ejeYL1", TW_TYPE_FLOAT, &ejeYL1, "step=0.01 label='y' group='Trasladar luz 1' group='Luz 1'");
+	TwAddVarRW(modelTW, "ejeZL1", TW_TYPE_FLOAT, &ejeZL1, "step=0.01 label='z' group='Trasladar luz 1' group='Luz 1'");
+	TwAddVarRW(modelTW, "Color AmbientalL", TW_TYPE_COLOR3F, &color_luz_ambiental, "label='Color Ambiental' group='Luz 1'");
+	TwAddVarRW(modelTW, "Color DifusoL", TW_TYPE_COLOR3F, &color_luz_difuso, "label='Color Difuso' group='Luz 1'");
+	TwAddVarRW(modelTW, "Color EspecularL", TW_TYPE_COLOR3F, &color_luz_especular, "label='Color Especular' group='Luz 1'");
+
+	TwAddButton(modelTW, "apagar2", activarLuces2, NULL, "label='Activar' group='Luz 2'");
+	TwAddVarRW(modelTW, "ejeXL2", TW_TYPE_FLOAT, &ejeXL2, "step=0.01 label='x' group='Trasladar luz 2' group='Luz 2'");
+	TwAddVarRW(modelTW, "ejeYL2", TW_TYPE_FLOAT, &ejeYL2, "step=0.01 label='y' group='Trasladar luz 2' group='Luz 2'");
+	TwAddVarRW(modelTW, "ejeZL2", TW_TYPE_FLOAT, &ejeZL2, "step=0.01 label='z' group='Trasladar luz 2' group='Luz 2'");
+	TwAddVarRW(modelTW, "Color AmbientalL2", TW_TYPE_COLOR3F, &color_luz_ambiental2, "label='Color Ambiental' group='Luz 2'");
+	TwAddVarRW(modelTW, "Color DifusoL2", TW_TYPE_COLOR3F, &color_luz_difuso2, "label='Color Difuso' group='Luz 2'");
+	TwAddVarRW(modelTW, "Color EspecularL2", TW_TYPE_COLOR3F, &color_luz_especular2, "label='Color Especular' group='Luz 2'");
 
 	//Boton de salir
 	TwAddButton(modelTW, "exitF", exit, NULL, " label='Salir' key=Esc");
@@ -401,5 +430,6 @@ int main(int argc, char* argv[])
 	setQuat(eje, angulo, rotacionInicial);
 
 	glutMainLoop();
+
 	return EXIT_SUCCESS;
 }

@@ -1,3 +1,4 @@
+// Brian Torres
 #include "Obj.h"
 
 extern vector<CModel> models; //Todos los modelos iran en este vector
